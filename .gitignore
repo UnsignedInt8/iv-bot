@@ -1,0 +1,18 @@
+# Environment
+.env
+
+# Dependencies
+node_modules/
+
+# Bun
+bun.lock
+
+# Build output
+dist/
+out/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
