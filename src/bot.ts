@@ -8,6 +8,8 @@ function escapeMarkdown(text: string): string {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
 }
 
+const deleteUserMsg = process.env.DELETE_USER_MSG !== "false";
+
 export function createBot(token: string): Telegraf {
   const bot = new Telegraf(token);
 
@@ -30,7 +32,9 @@ export function createBot(token: string): Telegraf {
     if (urls.length === 0) return;
 
     const url = urls[0];
+    const userMsgId = msg.message_id;
     const waiting = await ctx.reply("⏳ Processing...").catch(() => null);
+    let success = false;
 
     try {
       const result = await processUrl(url);
@@ -39,12 +43,16 @@ export function createBot(token: string): Telegraf {
         `✅ [${escapeMarkdown(result.title)}](${result.ivUrl})${pageInfo}\n\n` +
         `Source: ${url}`;
       await ctx.reply(reply, { parse_mode: "Markdown" });
+      success = true;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : "Unknown error";
       await ctx.reply(`❌ Failed: ${errMsg}`);
     } finally {
       if (waiting) {
         await ctx.telegram.deleteMessage(ctx.chat.id, waiting.message_id).catch(() => {});
+      }
+      if (success && deleteUserMsg) {
+        await ctx.telegram.deleteMessage(ctx.chat.id, userMsgId).catch(() => {});
       }
     }
   });
