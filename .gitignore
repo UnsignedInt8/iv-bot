@@ -4,9 +4,6 @@
 # Dependencies
 node_modules/
 
-# Bun
-bun.lock
-
 # Build output
 dist/
 out/
