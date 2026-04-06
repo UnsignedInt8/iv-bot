@@ -34,10 +34,15 @@ export async function fetchWithPuppeteer(url: string): Promise<string> {
   });
 
   try {
-    if (url.includes("mp.weixin")) {
-      await page.setUserAgent(WECHAT_UA);
+    const isWeChat = url.includes("mp.weixin");
+    if (isWeChat) {
+      await page.setUserAgent({ userAgent: WECHAT_UA });
     }
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 30_000 });
+    // 微信文章正文在初始 DOM 就有，不需要等全部资源加载完
+    await page.goto(url, {
+      waitUntil: isWeChat ? "domcontentloaded" : "networkidle2",
+      timeout: 30_000,
+    });
     // 简单滚动触发懒加载
     await page.evaluate(() => window.scrollBy(0, 500));
     await new Promise((r) => setTimeout(r, 1000));
