@@ -21,6 +21,17 @@ export function extractUrlFromEntities(
   return urls;
 }
 
+// Twitter/X URL 转换为 fxtwitter.com
+const TWITTER_RE = /^https?:\/\/(www\.|mobile\.)?(twitter\.com|x\.com)\//i;
+
+export function isTwitterUrl(url: string): boolean {
+  return TWITTER_RE.test(url);
+}
+
+export function toFxTwitterUrl(url: string): string {
+  return url.replace(TWITTER_RE, "https://fxtwitter.com/");
+}
+
 // 跳过的域名：已经是 IV / 不支持的平台
 const SKIP_PATTERNS = [
   /^https?:\/\/(www\.)?(graph\.org|telegra\.ph)/,

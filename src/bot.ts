@@ -1,5 +1,5 @@
 import { Telegraf, type Telegram } from "telegraf";
-import { extractUrls, extractUrlFromEntities, normalizeUrl, isValidUrl, shouldSkipUrl } from "./utils/links";
+import { extractUrls, extractUrlFromEntities, normalizeUrl, isValidUrl, shouldSkipUrl, isTwitterUrl, toFxTwitterUrl } from "./utils/links";
 import { processUrl } from "./processor";
 import { createQueue, popNext, makeQueueId } from "./pending";
 
@@ -108,13 +108,26 @@ export function createBot(token: string): Telegraf {
     if (rawUrls.length === 0) return;
 
     // 标准化、去重、过滤不支持的 URL
-    const urls = [...new Set(
+    const allUrls = [...new Set(
       rawUrls.map(normalizeUrl).filter((u) => isValidUrl(u) && !shouldSkipUrl(u))
     )];
-    if (urls.length === 0) return;
+    if (allUrls.length === 0) return;
 
     const chatId = msg.chat.id;
     const userMsgId = msg.message_id;
+
+    // Twitter/X URL 直接转换为 fxtwitter.com 返回
+    const twitterUrls = allUrls.filter(isTwitterUrl);
+    if (twitterUrls.length > 0) {
+      const converted = twitterUrls.map(toFxTwitterUrl).join("\n");
+      await ctx.telegram.sendMessage(chatId, converted);
+      if (deleteUserMsg) {
+        await ctx.telegram.deleteMessage(chatId, userMsgId).catch(() => {});
+      }
+      return;
+    }
+
+    const urls = allUrls;
 
     // 多个 URL：存入队列，处理第一个时附带按钮
     let next: NextButton | undefined;
