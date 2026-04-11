@@ -12,11 +12,6 @@ const BLOCKED_PATTERNS = [
   "此内容因违规无法查看",       // 微信：内容违规
 ];
 
-// 检测内容是否以图片元素开头（figure 或 img 标签）
-function startsWithImage(html: string): boolean {
-  return /^\s*<(figure|img)\b/i.test(html);
-}
-
 function isBlocked(content: string): boolean {
   const text = content.replace(/<[^>]+>/g, "");
   return BLOCKED_PATTERNS.some((p) => text.includes(p));
@@ -50,12 +45,6 @@ export async function parseUrl(url: string): Promise<ParseResult> {
   // 最终清洗
   result.content = sanitize(result.content);
   result.title = result.title.trim() || "Untitled";
-
-  // 微信文章以图片开头时 Telegram 不显示 IV，在最前插入文字（作者或标题）
-  if (url.includes("mp.weixin") && startsWithImage(result.content)) {
-    const leadText = result.author || result.title;
-    result.content = `<p>${leadText}</p>${result.content}`;
-  }
 
   // 拦截页或内容过少：报错而非创建空 IV
   if (isBlocked(result.content)) {

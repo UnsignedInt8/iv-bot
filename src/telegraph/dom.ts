@@ -35,8 +35,51 @@ function domToNode(domNode: Node): TelegraphNodeOrText {
   return node;
 }
 
+// Telegraph IV requires proper block structure at the top level:
+// - bare <img>  →  <figure><img /></figure>
+// - <p> with only a single <img>  →  <figure><img /></figure>
+// - bare text string  →  <p>text</p>
+// - bare <br>  →  removed
+function normalizeTopLevel(nodes: TelegraphNodeOrText[]): TelegraphNodeOrText[] {
+  const out: TelegraphNodeOrText[] = [];
+  for (const node of nodes) {
+    if (node === false) continue;
+
+    if (typeof node === "string") {
+      const text = node.trim();
+      if (text) out.push({ tag: "p", children: [text] });
+      continue;
+    }
+
+    if (node.tag === "br") continue;
+
+    if (node.tag === "img") {
+      out.push({ tag: "figure", children: [node] });
+      continue;
+    }
+
+    if (node.tag === "p") {
+      const meaningful = (node.children ?? []).filter(
+        (c): c is TelegraphNode | string =>
+          c !== false && (typeof c !== "string" || c.trim() !== "")
+      );
+      if (
+        meaningful.length === 1 &&
+        typeof meaningful[0] === "object" &&
+        (meaningful[0] as TelegraphNode).tag === "img"
+      ) {
+        out.push({ tag: "figure", children: [meaningful[0]] });
+        continue;
+      }
+    }
+
+    out.push(node);
+  }
+  return out;
+}
+
 export function htmlToTelegraphNodes(html: string): TelegraphNodeOrText[] {
   const dom = new JSDOM(`<!DOCTYPE html>${html}`).window.document;
   const body = domToNode(dom.body) as TelegraphNode;
-  return body.children ?? [];
+  return normalizeTopLevel(body.children ?? []);
 }
