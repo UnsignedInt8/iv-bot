@@ -44,6 +44,7 @@ async function processAndReply(
       `Source: ${url}`;
     await telegram.sendMessage(chatId, text, {
       parse_mode: "Markdown",
+      link_preview_options: { url: result.ivUrl },
       ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
     });
     success = true;
