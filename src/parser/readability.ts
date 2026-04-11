@@ -5,6 +5,7 @@ export interface ParseResult {
   title: string;
   content: string;
   url: string;
+  author?: string;
 }
 
 export async function readabilityParse(
@@ -20,6 +21,7 @@ export async function readabilityParse(
       title: result.title ?? "Untitled",
       content: result.content,
       url,
+      author: result.byline || undefined,
     };
   } catch {
     return null;

@@ -5,6 +5,7 @@ export interface ParseResult {
   title: string;
   content: string;
   url: string;
+  author?: string;
 }
 
 const MERCURY_TIMEOUT_MS = 15_000;
@@ -30,6 +31,7 @@ export async function mercuryParse(
       title: (result.title as string | undefined) ?? "Untitled",
       content: result.content,
       url: (result.url as string | undefined) ?? url,
+      author: (result.author as string | undefined) || undefined,
     };
   } catch {
     return null;
