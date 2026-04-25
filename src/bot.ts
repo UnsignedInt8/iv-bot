@@ -52,7 +52,7 @@ async function processAndReply(
     const errMsg = err instanceof Error ? err.message : "Unknown error";
     await telegram.sendMessage(chatId, `❌ Failed: ${errMsg}`, {
       ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
-    });
+    }).catch(() => {});
   } finally {
     if (waiting) {
       await telegram.deleteMessage(chatId, waiting.message_id).catch(() => {});
@@ -121,7 +121,7 @@ export function createBot(token: string): Telegraf {
     const twitterUrls = allUrls.filter(isTwitterUrl);
     if (twitterUrls.length > 0) {
       const converted = twitterUrls.map(toFxTwitterUrl).join("\n");
-      await ctx.telegram.sendMessage(chatId, converted);
+      await ctx.telegram.sendMessage(chatId, converted).catch(() => {});
       if (deleteUserMsg) {
         await ctx.telegram.deleteMessage(chatId, userMsgId).catch(() => {});
       }
@@ -143,6 +143,10 @@ export function createBot(token: string): Telegraf {
     if (success && deleteUserMsg) {
       await ctx.telegram.deleteMessage(chatId, userMsgId).catch(() => {});
     }
+  });
+
+  bot.catch((err) => {
+    console.error("Unhandled bot error:", err);
   });
 
   return bot;
