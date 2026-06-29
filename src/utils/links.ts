@@ -28,6 +28,12 @@ export function isTwitterUrl(url: string): boolean {
   return TWITTER_RE.test(url);
 }
 
+const FIXUPTWITTER_RE = /^https?:\/\/(www\.|mobile\.)?(fxtwitter\.com|vxtwitter\.com|fixupx.com)\//i;
+
+export function isFixupTwitterUrl(url:string): boolean {
+  return FIXUPTWITTER_RE.test(url);  
+}
+
 export function toFxTwitterUrl(url: string): string {
   return url.replace(TWITTER_RE, "https://fxtwitter.com/");
 }

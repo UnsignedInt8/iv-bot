@@ -1,5 +1,5 @@
 import { Telegraf, type Telegram } from "telegraf";
-import { extractUrls, extractUrlFromEntities, normalizeUrl, isValidUrl, shouldSkipUrl, isTwitterUrl, toFxTwitterUrl } from "./utils/links";
+import { extractUrls, extractUrlFromEntities, normalizeUrl, isValidUrl, shouldSkipUrl, isTwitterUrl, toFxTwitterUrl, isFixupTwitterUrl } from "./utils/links";
 import { processUrl } from "./processor";
 import { createQueue, popNext, makeQueueId } from "./pending";
 
@@ -110,7 +110,7 @@ export function createBot(token: string): Telegraf {
 
     // 标准化、去重、过滤不支持的 URL
     const allUrls = [...new Set(
-      rawUrls.map(normalizeUrl).filter((u) => isValidUrl(u) && !shouldSkipUrl(u))
+      rawUrls.map(normalizeUrl).filter((u) => isValidUrl(u) && !shouldSkipUrl(u)).filter(url => !isFixupTwitterUrl(url))
     )];
     if (allUrls.length === 0) return;
 
