@@ -1,12 +1,12 @@
 import { JSDOM } from "jsdom";
 
-interface TelegraphNode {
+export interface TelegraphNode {
   tag: string;
   attrs?: { href?: string; src?: string };
   children?: TelegraphNodeOrText[];
 }
 
-type TelegraphNodeOrText = TelegraphNode | string | false;
+export type TelegraphNodeOrText = TelegraphNode | string | false;
 
 function domToNode(domNode: Node): TelegraphNodeOrText {
   if (domNode.nodeType === domNode.TEXT_NODE) {
