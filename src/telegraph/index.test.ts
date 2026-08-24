@@ -37,4 +37,25 @@ describe("Telegraph pagination", () => {
       expect(telegraphContentBytes(page)).toBeLessThanOrEqual(MAX_CONTENT_BYTES);
     }
   });
+
+  test("accounts for escaped Unicode when deciding page size", () => {
+    const text = "中".repeat(11_000);
+    const rawJsonBytes = new TextEncoder().encode(
+      JSON.stringify([paragraph(text)])
+    ).length;
+
+    expect(rawJsonBytes).toBeLessThanOrEqual(MAX_CONTENT_BYTES);
+
+    const pages = splitNodesIntoPages([paragraph(text)]);
+    const reconstructed = pages
+      .flat()
+      .map((node) => (typeof node === "object" ? node.children?.[0] : node))
+      .join("");
+
+    expect(pages.length).toBeGreaterThan(1);
+    expect(reconstructed).toBe(text);
+    for (const page of pages) {
+      expect(telegraphContentBytes(page)).toBeLessThanOrEqual(MAX_CONTENT_BYTES);
+    }
+  });
 });

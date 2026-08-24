@@ -24,12 +24,22 @@ function getToken(): string {
   return tokens[hour % tokens.length];
 }
 
-function byteLength(str: string): number {
-  return new TextEncoder().encode(str).length;
+function serializedJsonBytes(value: unknown): number {
+  const serialized = JSON.stringify(value);
+  if (serialized === undefined) return 0;
+  let bytes = 0;
+
+  // Telegraph validates content after JSON serialization on the server. Its
+  // serializer escapes non-ASCII characters, so count the conservative form
+  // instead of the raw UTF-8 string sent by JavaScript.
+  for (let i = 0; i < serialized.length; i++) {
+    bytes += serialized.charCodeAt(i) <= 0x7f ? 1 : 6;
+  }
+  return bytes;
 }
 
 export function telegraphContentBytes(content: unknown[]): number {
-  return byteLength(JSON.stringify(content));
+  return serializedJsonBytes(content);
 }
 
 async function createPage(
@@ -57,7 +67,7 @@ async function createPage(
 }
 
 function splitText(text: string, maxBytes: number): string[] {
-  if (byteLength(JSON.stringify(text)) <= maxBytes) return [text];
+  if (serializedJsonBytes(text) <= maxBytes) return [text];
 
   const chars = Array.from(text);
   const chunks: string[] = [];
@@ -68,11 +78,11 @@ function splitText(text: string, maxBytes: number): string[] {
     let high = chars.length;
     let end = start;
 
-    // Find the longest UTF-8-safe substring that fits the node budget.
+    // Find the longest Unicode-safe substring that fits the node budget.
     while (low <= high) {
       const middle = Math.floor((low + high) / 2);
       const candidate = chars.slice(start, middle).join("");
-      if (byteLength(JSON.stringify(candidate)) <= maxBytes) {
+      if (serializedJsonBytes(candidate) <= maxBytes) {
         end = middle;
         low = middle + 1;
       } else {
@@ -93,7 +103,7 @@ function splitText(text: string, maxBytes: number): string[] {
 function splitNode(node: TelegraphNodeOrText, maxBytes: number): TelegraphNodeOrText[] {
   if (node === false) return [];
   if (typeof node === "string") return splitText(node, maxBytes);
-  if (byteLength(JSON.stringify(node)) <= maxBytes) return [node];
+  if (serializedJsonBytes(node) <= maxBytes) return [node];
 
   const children = node.children ?? [];
   if (children.length === 0) {
@@ -101,7 +111,7 @@ function splitNode(node: TelegraphNodeOrText, maxBytes: number): TelegraphNodeOr
   }
 
   const emptyNode: TelegraphNode = { ...node, children: [] };
-  const wrapperBytes = byteLength(JSON.stringify(emptyNode));
+  const wrapperBytes = serializedJsonBytes(emptyNode);
   const childMaxBytes = maxBytes - wrapperBytes - 2;
   if (childMaxBytes <= 0) {
     throw new Error("Telegraph content contains an element that cannot be paginated");
@@ -116,7 +126,7 @@ function splitNode(node: TelegraphNodeOrText, maxBytes: number): TelegraphNodeOr
   let currentChildren: TelegraphNodeOrText[] = [];
   for (const child of childFragments) {
     const candidate: TelegraphNode = { ...node, children: [...currentChildren, child] };
-    if (byteLength(JSON.stringify(candidate)) <= maxBytes) {
+    if (serializedJsonBytes(candidate) <= maxBytes) {
       currentChildren.push(child);
       continue;
     }
