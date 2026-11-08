@@ -120,7 +120,7 @@ export function createBot(token: string): Telegraf {
     // Twitter/X URL 直接转换为 fxtwitter.com 返回
     const twitterUrls = allUrls.filter(isTwitterUrl);
     if (twitterUrls.length > 0) {
-      const converted = twitterUrls.map(toFxTwitterUrl).join("\n");
+      const converted = [...new Set(twitterUrls.map(toFxTwitterUrl))].join("\n");
       await ctx.telegram.sendMessage(chatId, converted).catch(() => {});
       if (deleteUserMsg) {
         await ctx.telegram.deleteMessage(chatId, userMsgId).catch(() => {});

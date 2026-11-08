@@ -35,7 +35,8 @@ export function isFixupTwitterUrl(url:string): boolean {
 }
 
 export function toFxTwitterUrl(url: string): string {
-  return url.replace(TWITTER_RE, "https://fxtwitter.com/");
+  // 移除所有查询参数和 hash（如 ?s=20&t=xxx）
+  return url.replace(TWITTER_RE, "https://fxtwitter.com/").replace(/[?#].*$/, "");
 }
 
 // 跳过的域名：已经是 IV / 不支持的平台
